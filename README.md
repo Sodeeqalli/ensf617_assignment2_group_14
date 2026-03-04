@@ -1,5 +1,5 @@
 # ENSF 617 – Garbage Classification Programming 
-# Team Members: Sodeeq Alli, Peter Osaade, Zhanzhi Chen
+# Team Members:Peter Osaade, Zhanzhi Chen, Sodeeq Alli
 
 # NOTE : COLLABORATION, CODING, MODEL TRAINING AND EVALUATION ALL HAPPENED ON THE TALC CLUSTER
 Assignment

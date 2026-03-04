@@ -1,4 +1,8 @@
-# ENSF 617 – Garbage Classification Programming Assignment
+# ENSF 617 – Garbage Classification Programming 
+# Team Members: Sodeeq Alli, Peter Osaade, Zhanzhi Chen
+
+# NOTE : COLLABORATION, CODING, MODEL TRAINING AND EVALUATION ALL HAPPENED ON THE TALC CLUSTER
+Assignment
 
 This project implements three approaches for garbage classification using the provided CVPR 2024 dataset.
 

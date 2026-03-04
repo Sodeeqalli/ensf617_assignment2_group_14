@@ -1,0 +1,22 @@
+Using device: cpu
+Checkpoint: image_output_model/best_model.pth
+Test accuracy: 0.7538
+
+Confusion Matrix:
+[[377 177  42  99]
+ [ 61 907  41  77]
+ [ 40  61 682  16]
+ [ 74 130  27 621]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       Black     0.6830    0.5424    0.6047       695
+        Blue     0.7114    0.8352    0.7683      1086
+       Green     0.8611    0.8536    0.8573       799
+         TTR     0.7638    0.7289    0.7459       852
+
+    accuracy                         0.7538      3432
+   macro avg     0.7548    0.7400    0.7441      3432
+weighted avg     0.7535    0.7538    0.7503      3432
+

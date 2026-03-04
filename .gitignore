@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.env/
+
+# Model checkpoints (large files)
+*.pt
+*.pth
+
+# Logs
+*.out
+*.log
+
+# OS
+.DS_Store

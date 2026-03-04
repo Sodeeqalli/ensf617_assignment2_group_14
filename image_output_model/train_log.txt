@@ -1,0 +1,70 @@
+Using device: cuda
+Saving to: outputs_finetune_v2
+Epoch 1/20
+  Train: loss=0.7762 acc=0.6913
+  Val  : loss=0.6271 acc=0.7467
+Saved new best model (val_acc=0.7467)
+Epoch 2/20
+  Train: loss=0.5995 acc=0.7678
+  Val  : loss=0.5909 acc=0.7637
+Saved new best model (val_acc=0.7637)
+Epoch 3/20
+  Train: loss=0.5333 acc=0.7929
+  Val  : loss=0.5631 acc=0.7785
+Saved new best model (val_acc=0.7785)
+Epoch 4/20
+  Train: loss=0.4787 acc=0.8127
+  Val  : loss=0.5539 acc=0.7780
+Epoch 5/20
+  Train: loss=0.4422 acc=0.8265
+  Val  : loss=0.5586 acc=0.7823
+Saved new best model (val_acc=0.7823)
+Epoch 6/20
+  Train: loss=0.3965 acc=0.8475
+  Val  : loss=0.5604 acc=0.7961
+Saved new best model (val_acc=0.7961)
+Epoch 7/20
+  Train: loss=0.3590 acc=0.8619
+  Val  : loss=0.5725 acc=0.7917
+Epoch 8/20
+  Train: loss=0.3347 acc=0.8706
+  Val  : loss=0.5912 acc=0.7911
+Epoch 9/20
+  Train: loss=0.2962 acc=0.8862
+  Val  : loss=0.5910 acc=0.7933
+Epoch 10/20
+  Train: loss=0.2787 acc=0.8924
+  Val  : loss=0.6256 acc=0.7966
+Saved new best model (val_acc=0.7966)
+Epoch 11/20
+  Train: loss=0.2517 acc=0.9054
+  Val  : loss=0.6364 acc=0.7922
+Epoch 12/20
+  Train: loss=0.2258 acc=0.9155
+  Val  : loss=0.6611 acc=0.7944
+Epoch 13/20
+  Train: loss=0.2093 acc=0.9238
+  Val  : loss=0.6776 acc=0.7950
+Epoch 14/20
+  Train: loss=0.1873 acc=0.9308
+  Val  : loss=0.6981 acc=0.7895
+Epoch 15/20
+  Train: loss=0.1689 acc=0.9378
+  Val  : loss=0.7311 acc=0.7873
+Epoch 16/20
+  Train: loss=0.1548 acc=0.9419
+  Val  : loss=0.7668 acc=0.7845
+Epoch 17/20
+  Train: loss=0.1439 acc=0.9449
+  Val  : loss=0.7639 acc=0.7928
+Epoch 18/20
+  Train: loss=0.1295 acc=0.9518
+  Val  : loss=0.8023 acc=0.7829
+Epoch 19/20
+  Train: loss=0.1240 acc=0.9559
+  Val  : loss=0.8023 acc=0.7928
+Epoch 20/20
+  Train: loss=0.1139 acc=0.9599
+  Val  : loss=0.8209 acc=0.7884
+Done. Best val acc: 0.7966
+Best model saved to: image_output_model/best_model.pth

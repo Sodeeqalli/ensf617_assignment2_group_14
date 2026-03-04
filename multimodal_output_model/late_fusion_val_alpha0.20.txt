@@ -1,0 +1,24 @@
+split=val
+alpha=0.2
+acc=0.9559
+filter_train_overlap=True
+samples=1793
+
+Confusion Matrix:
+[[342  15   4   9]
+ [ 13 741   5   5]
+ [  6   2 340   3]
+ [  8   4   5 291]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       Black     0.9268    0.9243    0.9256       370
+        Blue     0.9724    0.9699    0.9712       764
+       Green     0.9605    0.9687    0.9645       351
+         TTR     0.9448    0.9448    0.9448       308
+
+    accuracy                         0.9559      1793
+   macro avg     0.9511    0.9519    0.9515      1793
+weighted avg     0.9559    0.9559    0.9559      1793
+

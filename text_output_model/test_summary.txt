@@ -1,0 +1,30 @@
+Using device: cuda
+Model: distilbert-base-uncased
+Checkpoint: text_output_model/best_model.pt
+
+✅ Test accuracy: 0.7686
+
+Confusion Matrix (rows=true, cols=pred):
+[[424 168  39  64]
+ [ 94 865  80  47]
+ [ 25  48 723   3]
+ [ 86 113  27 626]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+       Black     0.6741    0.6101    0.6405       695
+        Blue     0.7245    0.7965    0.7588      1086
+       Green     0.8320    0.9049    0.8669       799
+         TTR     0.8459    0.7347    0.7864       852
+
+    accuracy                         0.7686      3432
+   macro avg     0.7691    0.7615    0.7631      3432
+weighted avg     0.7695    0.7686    0.7669      3432
+
+
+Representative wrong examples (one per true class):
+- True=Black Pred=TTR Text='air freshener 915'
+- True=Blue Pred=TTR Text='business card 1666'
+- True=Green Pred=Black Text='dirty kleenex 59'
+- True=TTR Pred=Blue Text='air freshener spray bottle 2133'

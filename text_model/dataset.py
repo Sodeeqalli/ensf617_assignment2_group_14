@@ -3,6 +3,7 @@ import re
 import torch
 from torch.utils.data import Dataset
 
+# Mapping between class names and numeric labels
 CLASS_TO_IDX = {"Black": 0, "Blue": 1, "Green": 2, "TTR": 3}
 IDX_TO_CLASS = {v: k for k, v in CLASS_TO_IDX.items()}
 
@@ -21,8 +22,8 @@ def normalize_text(filename_no_ext: str) -> str:
 class GarbageTextDataset(Dataset):
     """
     Builds (text,label) pairs from class subfolders.
-    Optional exclude_texts lets us remove any text that appears in other splits
-    (prevents leakage when the dataset itself has duplicates across train/val/test).
+    Optional exclude_texts removes duplicated samples across splits
+    to prevent train/val/test leakage.
     """
     def __init__(self, root_dir, tokenizer, max_len=32, exclude_texts=None):
         self.samples = []
@@ -30,6 +31,7 @@ class GarbageTextDataset(Dataset):
         self.max_len = max_len
         self.exclude_texts = set(exclude_texts) if exclude_texts else set()
 
+        # Iterate through dataset directory structure
         for class_name in sorted(os.listdir(root_dir)):
             class_path = os.path.join(root_dir, class_name)
             if not os.path.isdir(class_path) or class_name not in CLASS_TO_IDX:
@@ -39,14 +41,16 @@ class GarbageTextDataset(Dataset):
                 if not filename.lower().endswith(".png"):
                     continue
 
-                raw = filename[:-4]  # remove .png
+                raw = filename[:-4]  # remove .png extension
                 text = normalize_text(raw)
 
+                # Skip samples that appear in other dataset splits
                 if text in self.exclude_texts:
                     continue
 
                 self.samples.append((text, CLASS_TO_IDX[class_name]))
 
+        # Store class names in index order
         self.classes = [IDX_TO_CLASS[i] for i in range(len(CLASS_TO_IDX))]
 
     def __len__(self):
@@ -55,6 +59,7 @@ class GarbageTextDataset(Dataset):
     def __getitem__(self, idx):
         text, label = self.samples[idx]
 
+        # Tokenize text for transformer input
         enc = self.tokenizer(
             text,
             padding="max_length",
@@ -67,5 +72,5 @@ class GarbageTextDataset(Dataset):
             "input_ids": enc["input_ids"].squeeze(0),
             "attention_mask": enc["attention_mask"].squeeze(0),
             "label": torch.tensor(label, dtype=torch.long),
-            "text": text,  # helpful for eval/debug
+            "text": text,  # kept for debugging and evaluation analysis
         }

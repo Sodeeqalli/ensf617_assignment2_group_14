@@ -1,4 +1,3 @@
-# text_model/train.py
 import os
 import torch
 import torch.nn as nn
@@ -26,11 +25,13 @@ def collect_texts(root_dir: str) -> set[str]:
     return texts
 
 
+# Compute accuracy from model logits
 def accuracy_from_logits(logits, labels):
     preds = torch.argmax(logits, dim=1)
     return (preds == labels).float().mean().item()
 
 
+# Run one training or evaluation epoch
 def run_epoch(model, loader, device, optimizer=None):
     train_mode = optimizer is not None
     model.train(train_mode)
@@ -50,9 +51,9 @@ def run_epoch(model, loader, device, optimizer=None):
         acc = accuracy_from_logits(logits, labels)
 
         if train_mode:
-            optimizer.zero_grad(set_to_none=True)
-            loss.backward()
-            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)  # clear gradients
+            loss.backward()                       # backpropagation
+            optimizer.step()                      # update model parameters
 
         total_loss += loss.item()
         total_acc += acc
@@ -63,7 +64,7 @@ def run_epoch(model, loader, device, optimizer=None):
 
 def main():
     cfg = Config()
-    set_seed(cfg.seed)
+    set_seed(cfg.seed)  # ensure reproducibility
 
     device = get_device()
     print(f"Using device: {device}")
@@ -78,15 +79,17 @@ def main():
     val_root = os.path.join(cfg.data_root, cfg.val_dir)
     test_root = os.path.join(cfg.data_root, cfg.test_dir)
 
+    # Initialize tokenizer matching the pretrained model
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model_name, use_fast=cfg.use_fast_tokenizer
     )
 
-    # ---- Leakage fix: remove any text that appears in val/test from train ----
+    # ---- Prevent dataset leakage across splits ----
     val_texts = collect_texts(val_root)
     test_texts = collect_texts(test_root)
     exclude_texts = val_texts | test_texts
 
+    # Build datasets
     train_ds = GarbageTextDataset(
         train_root, tokenizer, max_len=cfg.max_len, exclude_texts=exclude_texts
     )
@@ -107,12 +110,14 @@ def main():
         pin_memory=(device == "cuda"),
     )
 
+    # Build DistilBERT classifier
     model = DistilBertClassifier(cfg.model_name, cfg.num_classes).to(device)
     optimizer = AdamW(model.parameters(), lr=cfg.lr)
 
     best_val_acc = 0.0
     bad_epochs = 0
 
+    # Write training metadata to log
     with open(train_log_path, "w") as f:
         f.write(f"Using device: {device}\n")
         f.write(f"Model: {cfg.model_name}\n")
@@ -123,6 +128,7 @@ def main():
         f.write(f"  excluded_from_train={len(exclude_texts)} (union)\n")
         f.write(f"  train_samples_after_filter={len(train_ds)}\n\n")
 
+    # Training loop
     for epoch in range(1, cfg.epochs + 1):
         train_loss, train_acc = run_epoch(model, train_loader, device, optimizer)
         val_loss, val_acc = run_epoch(model, val_loader, device, optimizer=None)
@@ -137,6 +143,7 @@ def main():
         with open(train_log_path, "a") as f:
             f.write(msg)
 
+        # Save best model checkpoint
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             bad_epochs = 0
@@ -148,6 +155,8 @@ def main():
                 f.write(save_msg)
         else:
             bad_epochs += 1
+
+            # Early stopping if validation does not improve
             if bad_epochs >= cfg.patience:
                 stop_msg = f"Early stopping (no improvement for {cfg.patience} epochs).\n"
                 print(stop_msg, end="")

@@ -5,7 +5,7 @@ from image_model.config import Config
 
 def main():
     cfg = Config()
-    log_path = os.path.join(cfg.out_dir, "train_log.txt")
+    log_path = os.path.join(cfg.out_dir, "train_log.txt")  # training log produced during model training
 
     if not os.path.exists(log_path):
         raise FileNotFoundError(f"Log not found: {log_path}")
@@ -13,9 +13,11 @@ def main():
     train_loss, train_acc = [], []
     val_loss, val_acc = [], []
 
+    # Regex patterns used to extract metrics from training logs
     train_pat = re.compile(r"Train:\s+loss=([0-9.]+)\s+acc=([0-9.]+)")
     val_pat   = re.compile(r"Val\s+:\s+loss=([0-9.]+)\s+acc=([0-9.]+)")
 
+    # Parse the log file and collect loss/accuracy values per epoch
     with open(log_path) as f:
         for line in f:
             t = train_pat.search(line)
@@ -29,7 +31,7 @@ def main():
 
     epochs = range(1, len(train_loss) + 1)
 
-    # Loss plot
+    # Plot training vs validation loss
     plt.figure()
     plt.plot(epochs, train_loss, label="Train")
     plt.plot(epochs, val_loss, label="Val")
@@ -40,7 +42,7 @@ def main():
     plt.savefig(os.path.join(cfg.out_dir, "train_val_loss.png"), dpi=200)
     plt.close()
 
-    # Accuracy plot
+    # Plot training vs validation accuracy
     plt.figure()
     plt.plot(epochs, train_acc, label="Train")
     plt.plot(epochs, val_acc, label="Val")

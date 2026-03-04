@@ -6,12 +6,13 @@ import torch
 
 def set_seed(seed: int):
     """
-    Make training deterministic for reproducibility.
+    Set random seeds across libraries to ensure reproducible experiments.
     """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
 
+    # Ensure deterministic behavior when using CUDA
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -22,13 +23,13 @@ def set_seed(seed: int):
 
 def get_device():
     """
-    Return the best available device.
+    Return the best available computation device (GPU if available, otherwise CPU).
     """
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def ensure_dir(path: str):
     """
-    Create directory if it does not exist.
+    Create the directory if it does not already exist.
     """
     os.makedirs(path, exist_ok=True)

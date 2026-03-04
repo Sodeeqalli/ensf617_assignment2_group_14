@@ -1,4 +1,5 @@
 # multimodal_model/eval_late_fusion.py
+
 import os
 import numpy as np
 import torch
@@ -8,6 +9,7 @@ from torchvision.datasets import ImageFolder
 from transformers import AutoTokenizer
 from sklearn.metrics import confusion_matrix, classification_report
 
+# Import configuration and model builders for image and text models
 from image_model.config import Config as ImgCfg
 from image_model.model import build_model as build_img_model
 from image_model.transforms import get_transforms as get_img_transforms
@@ -33,13 +35,10 @@ def list_png_names(root: str) -> set[str]:
 @torch.no_grad()
 def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = True) -> float:
     """
-    Late fusion of image + text model probabilities.
+    Perform late fusion between image and text model probabilities.
 
-    alpha = weight for image probs.
-    p_fused = alpha * p_img + (1 - alpha) * p_txt
-
-    split: "train" | "val" | "test"
-    filter_train_overlap: when evaluating on val/test, drop any sample whose filename exists in train.
+    alpha controls weighting:
+    fused_prob = alpha * image_prob + (1-alpha) * text_prob
     """
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -49,11 +48,12 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
     out_dir = "multimodal_output_model"
     os.makedirs(out_dir, exist_ok=True)
 
+    # Dataset directories
     train_root = os.path.join(img_cfg.data_root, img_cfg.train_dir)
     val_root = os.path.join(img_cfg.data_root, img_cfg.val_dir)
     test_root = os.path.join(img_cfg.data_root, img_cfg.test_dir)
 
-    # ----- pick split root -----
+    # Select which dataset split to evaluate
     if split == "train":
         root = train_root
     elif split == "val":
@@ -61,7 +61,7 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
     else:
         root = test_root
 
-    # ----- transforms -----
+    # Image preprocessing transforms
     tfms = get_img_transforms(img_size=img_cfg.img_size)
     if split == "train":
         t = tfms["train"]
@@ -70,10 +70,11 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
     else:
         t = tfms["test"]
 
-    # ----- dataset -----
+    # Load dataset using ImageFolder
     ds = ImageFolder(root, transform=t)
 
-    # Optional: remove any filenames that appear in train (prevents overlap leakage if dataset has duplicates)
+    # Optional leakage protection:
+    # remove samples in val/test that also appear in train
     if filter_train_overlap and split in ("val", "test"):
         train_names = list_png_names(train_root)
         filtered = [(p, y) for (p, y) in ds.samples if os.path.basename(p).lower() not in train_names]
@@ -88,21 +89,21 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
         pin_memory=(device == "cuda"),
     )
 
-    # ----- load image model -----
+    # ----- Load trained image model -----
     img_ckpt = os.path.join(img_cfg.out_dir, "best_model.pth")
     img_model = build_img_model(num_classes=len(ds.classes)).to(device)
     img_model.load_state_dict(torch.load(img_ckpt, map_location=device))
     img_model.eval()
 
-    # ----- load text model -----
+    # ----- Load trained text model -----
     txt_ckpt = os.path.join(txt_cfg.out_dir, "best_model.pt")
     tokenizer = AutoTokenizer.from_pretrained(txt_cfg.model_name, use_fast=txt_cfg.use_fast_tokenizer)
+
     txt_model = DistilBertClassifier(txt_cfg.model_name, txt_cfg.num_classes).to(device)
     txt_model.load_state_dict(torch.load(txt_ckpt, map_location=device))
     txt_model.eval()
 
-    # Sanity print once (class order should match your text mapping assumption)
-    # Expected: ['Black', 'Blue', 'Green', 'TTR']
+    # Print class order for sanity check
     print("Classes:", ds.classes)
     print(f"Split={split} samples={len(ds)} alpha={alpha:.2f} filter_train_overlap={filter_train_overlap}")
 
@@ -110,7 +111,7 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
 
     y_true, y_pred = [], []
 
-    # ImageFolder stores file paths in ds.samples
+    # ImageFolder keeps original file paths
     sample_paths = [p for (p, _) in ds.samples]
     ptr = 0
 
@@ -122,11 +123,12 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
         imgs = imgs.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
 
-        # image probs
+        # ----- Image model predictions -----
         p_img = softmax(img_model(imgs))
 
-        # text probs from filenames
+        # ----- Text model predictions (from filenames) -----
         texts = [normalize_text(os.path.splitext(os.path.basename(p))[0]) for p in batch_paths]
+
         enc = tokenizer(
             texts,
             padding="max_length",
@@ -134,12 +136,13 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
             max_length=txt_cfg.max_len,
             return_tensors="pt",
         )
+
         input_ids = enc["input_ids"].to(device)
         attention_mask = enc["attention_mask"].to(device)
 
         p_txt = softmax(txt_model(input_ids, attention_mask))
 
-        # fuse
+        # ----- Late fusion -----
         p_fused = alpha * p_img + (1 - alpha) * p_txt
         preds = torch.argmax(p_fused, dim=1)
 
@@ -149,10 +152,12 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
     y_true_np = np.array(y_true)
     y_pred_np = np.array(y_pred)
 
+    # Compute metrics
     acc = float((y_true_np == y_pred_np).mean())
     cm = confusion_matrix(y_true_np, y_pred_np, labels=list(range(len(ds.classes))))
     report = classification_report(y_true_np, y_pred_np, target_names=ds.classes, digits=4)
 
+    # Save evaluation results
     out_path = os.path.join(out_dir, f"late_fusion_{split}_alpha{alpha:.2f}.txt")
     with open(out_path, "w") as f:
         f.write(f"split={split}\nalpha={alpha}\nacc={acc:.4f}\n")
@@ -169,7 +174,8 @@ def main(alpha: float = 0.7, split: str = "test", filter_train_overlap: bool = T
 
 
 if __name__ == "__main__":
-    # ----- sweep alpha on validation -----
+
+    # Sweep alpha values on validation set to find best fusion weight
     best_alpha = None
     best_acc = -1.0
 
@@ -182,6 +188,6 @@ if __name__ == "__main__":
 
     print(f"\nBest alpha from validation: {best_alpha:.2f} (acc={best_acc:.4f})")
 
-    # ----- final evaluation on test -----
+    # Final evaluation on test set using best alpha
     print("\nRunning final evaluation on TEST with best alpha...")
     main(alpha=float(best_alpha), split="test", filter_train_overlap=True)
